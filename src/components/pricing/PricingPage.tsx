@@ -6,6 +6,7 @@ import { CheckoutModal } from './CheckoutModal';
 
 interface PricingPageProps {
   currentTier: PlanTier;
+  userId?: string;
   userEmail?: string;
   userName?: string;
   onClose: () => void;
@@ -13,6 +14,7 @@ interface PricingPageProps {
 
 export const PricingPage: React.FC<PricingPageProps> = ({
   currentTier,
+  userId,
   userEmail,
   userName,
   onClose,
@@ -115,6 +117,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({
       {checkoutPlan && (
         <CheckoutModal
           plan={checkoutPlan}
+          userId={userId}
           userEmail={userEmail}
           userName={userName}
           onClose={() => setCheckoutPlan(null)}

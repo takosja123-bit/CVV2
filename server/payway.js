@@ -86,6 +86,11 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
   if (price <= 0) {
     throw new Error('This plan is free and does not require checkout.');
   }
+  if (!customer.uid) {
+    // Not a PayWay requirement — but without it we can't credit anyone once
+    // they've paid, so refuse rather than take money we can't fulfill.
+    throw new Error('customer.uid is required (user must be logged in to upgrade).');
+  }
 
   const reqTime = nowReqTime();
   const tranId = `JCV-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -94,6 +99,13 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
   const items = base64(
     JSON.stringify([{ name: `JobifyCV ${planId}`, quantity: 1, price: amount }])
   );
+
+  // customer.uid identifies which Firestore userProfiles doc to credit once
+  // PayWay confirms payment — without it the callback has no way to know
+  // whose plan to upgrade. It rides along in custom_fields (echoed back
+  // as-is by PayWay) and return_params (also echoed back), base64-encoded
+  // JSON in both cases like the existing planId payloads.
+  const uid = customer.uid || null;
 
   const fields = {
     req_time: reqTime,
@@ -111,11 +123,11 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     // 'cards' shows the Visa/Mastercard card-entry form instead.
     payment_option: paymentOption === 'cards' ? 'cards' : 'abapay',
     currency: 'USD',
-    custom_fields: base64(JSON.stringify({ planId })),
+    custom_fields: base64(JSON.stringify({ planId, uid })),
     return_url: `${appUrl}/api/payments/callback`,
   continue_success_url: `${appUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
     return_deeplink: '',
-    return_params: base64(JSON.stringify({ planId, tranId })),
+    return_params: base64(JSON.stringify({ planId, tranId, uid })),
   };
 
   const hashInput = FIELD_ORDER.map((key) => fields[key] ?? '').join('');
