@@ -5,6 +5,7 @@ import { startPaywayCheckout, PaywayPaymentOption, PaymentServiceError } from '.
 
 interface CheckoutModalProps {
   plan: PricingPlan;
+  userId?: string;
   userEmail?: string;
   userName?: string;
   onClose: () => void;
@@ -12,6 +13,7 @@ interface CheckoutModalProps {
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   plan,
+  userId,
   userEmail,
   userName,
   onClose,
@@ -24,10 +26,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const lastGuess = rest.join(' ') || 'Customer';
 
   const handleContinue = async () => {
+    if (!userId) {
+      setError('Please log in before upgrading, so we know which account to apply the plan to.');
+      return;
+    }
     setError(null);
     setIsProcessing(true);
     try {
       await startPaywayCheckout(plan.id, method, {
+        uid: userId,
         email: userEmail || '',
         firstName: first || 'Jobify',
         lastName: lastGuess,

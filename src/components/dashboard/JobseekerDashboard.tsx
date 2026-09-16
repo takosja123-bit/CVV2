@@ -1055,6 +1055,7 @@ export const JobseekerDashboard: React.FC<JobseekerDashboardProps> = ({
       {isPricingPageOpen && (
         <PricingPage
           currentTier={currentPlanTier}
+          userId={currentUserProfile?.uid}
           userEmail={user?.email}
           userName={user?.name}
           onClose={() => {

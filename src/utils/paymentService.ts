@@ -12,6 +12,7 @@ const PAYMENTS_API_URL =
 export type PaywayPaymentOption = 'abapay' | 'cards';
 
 export interface CheckoutCustomer {
+  uid: string;
   email: string;
   firstName: string;
   lastName: string;

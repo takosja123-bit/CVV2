@@ -1,7 +1,17 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import { createPaywayTransaction, verifyPaywayPushback } from './payway.js';
+import { grantPlanTier } from './firebaseAdmin.js';
+
+// Load server/.env explicitly by path — plain `import 'dotenv/config'` only
+// looks in process.cwd(), which breaks when this is started from the repo
+// root (e.g. `npm run payments-server`, or the README's own instructions)
+// instead of from inside server/.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 app.use(cors());
@@ -48,20 +58,30 @@ app.post('/api/payments/callback', async (req, res) => {
 
   const { tran_id, status, return_params } = req.body;
   let planId = null;
+  let uid = null;
   try {
-    planId = JSON.parse(Buffer.from(return_params, 'base64').toString('utf8')).planId;
+    const parsed = JSON.parse(Buffer.from(return_params, 'base64').toString('utf8'));
+    planId = parsed.planId;
+    uid = parsed.uid;
   } catch {
     // ignore parse errors
   }
 
   if (status === '0') {
-    // TODO: grant `planId` to the paying user in Firestore. This backend
-    // currently has no Firebase Admin credentials wired up — add the
-    // firebase-admin SDK with a service account key, look up the user by
-    // the email/tran_id you stored when creating the transaction, and set
-    // their planTier field. Do this here, not in the frontend, since this
-    // is the only step that's been cryptographically verified as paid.
     console.log(`[payments] ✅ Transaction ${tran_id} paid successfully for plan ${planId}.`);
+    if (!uid) {
+      console.error(`[payments] ⚠️ Transaction ${tran_id} paid but had no uid — cannot grant plan.`);
+    } else {
+      try {
+        await grantPlanTier(uid, planId);
+        console.log(`[payments] Granted ${planId} to user ${uid}.`);
+      } catch (err) {
+        // Don't fail the HTTP response to PayWay over this — the payment is
+        // real either way — but this needs someone to notice and fix it
+        // manually (grant the plan by hand from the admin dashboard).
+        console.error(`[payments] ⚠️ Failed to grant plan for transaction ${tran_id}:`, err.message);
+      }
+    }
   } else {
     console.log(`[payments] Transaction ${tran_id} reported status=${status}.`);
   }
