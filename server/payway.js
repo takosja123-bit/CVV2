@@ -141,6 +141,13 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     additional_params: '',
     google_pay_token: '',
     skip_success_page: '',
+    // Not part of the hash formula (confirmed against the docs — it's
+    // absent from the PHP $b4hash sample). Some merchant profiles have
+    // both the Checkout service AND the standalone QR Payment API enabled;
+    // without this, PayWay defaults to the QR API and returns raw JSON
+    // (qrString/qrImage/etc.) instead of an HTML checkout page — which is
+    // useless for a plain form-POST web flow like this one.
+    payment_gate: '0',
   };
 
   const hashInput = FIELD_ORDER.map((key) => fields[key] ?? '').join('');
