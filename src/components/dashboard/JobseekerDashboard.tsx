@@ -877,7 +877,7 @@ export const JobseekerDashboard: React.FC<JobseekerDashboardProps> = ({
                   setIsPublicJobModalOpen(true);
                 }}
                 onDeleteJob={handleDeletePublicJob}
-                onRequestUpgrade={() => setIsUserUpgradeModalOpen(true)}
+                onRequestUpgrade={() => setIsPricingPageOpen(true)}
                 onSuggestJob={() => {
                   setPublicJobToEdit(null);
                   setIsPublicJobModalOpen(true);
