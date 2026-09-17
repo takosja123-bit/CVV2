@@ -76,7 +76,7 @@ const FIELD_ORDER = [
   'skip_success_page',
 ];
 
-export function createPaywayTransaction({ planId, paymentOption, customer, appUrl }) {
+export function createPaywayTransaction({ planId, paymentOption, customer, appUrl, frontendUrl }) {
   const merchantId = process.env.ABA_PAYWAY_MERCHANT_ID;
   const apiKey = process.env.ABA_PAYWAY_API_KEY;
 
@@ -131,7 +131,7 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     payment_option: paymentOption === 'cards' ? 'cards' : 'abapay',
     return_url: `${appUrl}/api/payments/callback`,
     cancel_url: '',
-    continue_success_url: `${appUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
+    continue_success_url: `${frontendUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
     return_deeplink: '',
     currency: 'USD',
     custom_fields: base64(JSON.stringify({ planId, uid })),

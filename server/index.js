@@ -20,6 +20,10 @@ app.use(express.urlencoded({ extended: true })); // PayWay pushbacks are form-en
 
 const PORT = process.env.PORT || 8787;
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+// Where PayWay sends the browser after a successful payment. This must be
+// the actual website (e.g. your Render Static Site), NOT this backend's own
+// URL — this server has no page to show, only API routes.
+const FRONTEND_URL = process.env.FRONTEND_URL || APP_URL;
 
 // 1. Create a signed PayWay transaction. The frontend takes the returned
 //    {action, fields} and submits them as a real form POST, which is what
@@ -37,6 +41,7 @@ app.post('/api/payments/create-transaction', (req, res) => {
       paymentOption,
       customer,
       appUrl: APP_URL,
+      frontendUrl: FRONTEND_URL,
     });
     res.json({ action, fields });
   } catch (err) {
