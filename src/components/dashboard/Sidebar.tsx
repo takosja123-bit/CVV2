@@ -35,6 +35,7 @@ interface SidebarProps {
   isAdmin?: boolean;
   pendingSubmissionsCount?: number;
   planTier?: PlanTier;
+  planExpiresAt?: string | null;
   onOpenPricing?: () => void;
 }
 
@@ -54,9 +55,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isAdmin = false,
   pendingSubmissionsCount = 0,
   planTier = 'Free Plan',
+  planExpiresAt = null,
   onOpenPricing,
 }) => {
   const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
+
+  // Human-readable countdown for a paid plan's 30-day window, e.g.
+  // "Expires in 12 days" or "Expires today" / "Expired" if it's lapsed
+  // (a lapsed plan falls back to Free Plan elsewhere, but showing the
+  // literal date here helps explain why to the user).
+  let expiryText: string | null = null;
+  if (planExpiresAt) {
+    const msLeft = new Date(planExpiresAt).getTime() - Date.now();
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    if (daysLeft > 1) {
+      expiryText = `Expires in ${daysLeft} days`;
+    } else if (daysLeft === 1) {
+      expiryText = 'Expires tomorrow';
+    } else if (daysLeft === 0) {
+      expiryText = 'Expires today';
+    } else {
+      expiryText = 'Expired — renew to keep access';
+    }
+  }
 
   const navItems: {
     id: SidebarSection;
@@ -244,9 +265,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Plan Tier Badge */}
-            {!isAdmin && (
-              <div className="mt-1.5 pt-1.5 border-t border-slate-800/70 flex items-center justify-between text-[10px]">
-                <span className="text-slate-400">Current Tier:</span>
+            <div className="mt-1.5 pt-1.5 border-t border-slate-800/70 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Current Tier:</span>
+              {isAdmin ? (
+                <span className="font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  Full Access (Admin)
+                </span>
+              ) : (
                 <span
                   className={`font-semibold px-2 py-0.5 rounded-full ${
                     planTier === 'Premium Plan'
@@ -258,16 +283,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   {planTier}
                 </span>
+              )}
+            </div>
+
+            {/* Expiry countdown — only meaningful for a paid, non-admin plan */}
+            {!isAdmin && planTier !== 'Free Plan' && expiryText && (
+              <div
+                className={`mt-1 text-[10px] text-right ${
+                  expiryText.startsWith('Expired') ? 'text-rose-400 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                {expiryText}
               </div>
             )}
 
-            {!isAdmin && planTier !== 'Premium Plan' && onOpenPricing && (
+            {/* Always give a click target here, whatever the tier/role —
+                this is the "where do I click to see my plan" spot. */}
+            {onOpenPricing && (
               <button
                 onClick={onOpenPricing}
                 className="mt-2 w-full py-1.5 rounded-lg text-[11px] font-bold text-white bg-[#0057B8] hover:bg-[#004494] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.99]"
               >
                 <Sparkles className="w-3 h-3" />
-                <span>Upgrade Plan</span>
+                <span>
+                  {isAdmin
+                    ? 'View Plans'
+                    : planTier === 'Premium Plan'
+                    ? 'Manage Plan'
+                    : 'Upgrade Plan'}
+                </span>
               </button>
             )}
           </div>

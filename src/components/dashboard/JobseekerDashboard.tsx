@@ -843,6 +843,7 @@ export const JobseekerDashboard: React.FC<JobseekerDashboardProps> = ({
         isAdmin={isAdmin}
         pendingSubmissionsCount={submissions.filter((s) => s.status === 'pending').length}
         planTier={currentPlanTier}
+        planExpiresAt={currentUserProfile?.planExpiresAt}
         onOpenPricing={() => setIsPricingPageOpen(true)}
       />
 
