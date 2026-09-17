@@ -142,6 +142,13 @@ export type TemplateId =
   | 'template-scenic-f' // Scenic Angkor Wat - Charcoal Ruins
   | 'template-scenic-g' // Scenic Angkor Wat - Emerald Canopy
   | 'template-scenic-h' // Scenic Angkor Wat - Ancient Roots
+  | 'template-backdrop-b' // Backdrop Angkor Wat - Faded Blue
+  | 'template-backdrop-c' // Backdrop Angkor Wat - Faded Orange
+  | 'template-backdrop-d' // Backdrop Angkor Wat - Faded Peach
+  | 'template-backdrop-e' // Backdrop Angkor Wat - Faded Red
+  | 'template-backdrop-f' // Backdrop Angkor Wat - Faded Crimson
+  | 'template-backdrop-g' // Backdrop Angkor Wat - Faded Gold
+  | 'template-backdrop-h' // Backdrop Angkor Wat - Faded Green
   // Legacy aliases for backward compatibility
   | 'classic'
   | 'modern'

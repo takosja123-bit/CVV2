@@ -33,6 +33,13 @@ import { ScenicTemplateE } from './ScenicTemplateE';
 import { ScenicTemplateF } from './ScenicTemplateF';
 import { ScenicTemplateG } from './ScenicTemplateG';
 import { ScenicTemplateH } from './ScenicTemplateH';
+import { BackdropTemplateB } from './BackdropTemplateB';
+import { BackdropTemplateC } from './BackdropTemplateC';
+import { BackdropTemplateD } from './BackdropTemplateD';
+import { BackdropTemplateE } from './BackdropTemplateE';
+import { BackdropTemplateF } from './BackdropTemplateF';
+import { BackdropTemplateG } from './BackdropTemplateG';
+import { BackdropTemplateH } from './BackdropTemplateH';
 
 interface TemplateDispatcherProps {
   templateId: TemplateId;
@@ -149,6 +156,27 @@ export const TemplateDispatcher: React.FC<TemplateDispatcherProps> = ({
 
     case 'template-scenic-h':
       return <ScenicTemplateH data={safeData} primaryColor={primaryColor || '#78350f'} />;
+
+    case 'template-backdrop-b':
+      return <BackdropTemplateB data={safeData} primaryColor={primaryColor || '#1d4ed8'} />;
+
+    case 'template-backdrop-c':
+      return <BackdropTemplateC data={safeData} primaryColor={primaryColor || '#ea580c'} />;
+
+    case 'template-backdrop-d':
+      return <BackdropTemplateD data={safeData} primaryColor={primaryColor || '#fb923c'} />;
+
+    case 'template-backdrop-e':
+      return <BackdropTemplateE data={safeData} primaryColor={primaryColor || '#dc2626'} />;
+
+    case 'template-backdrop-f':
+      return <BackdropTemplateF data={safeData} primaryColor={primaryColor || '#b91c1c'} />;
+
+    case 'template-backdrop-g':
+      return <BackdropTemplateG data={safeData} primaryColor={primaryColor || '#ca8a04'} />;
+
+    case 'template-backdrop-h':
+      return <BackdropTemplateH data={safeData} primaryColor={primaryColor || '#16a34a'} />;
 
     default:
       return <TemplateB data={safeData} primaryColor={primaryColor || '#1e3a5f'} />;
