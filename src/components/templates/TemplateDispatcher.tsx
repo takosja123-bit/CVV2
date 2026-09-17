@@ -26,6 +26,13 @@ import { TemplateQ } from './TemplateQ';
 import { TemplateR } from './TemplateR';
 import { TemplateS } from './TemplateS';
 import { TemplateT } from './TemplateT';
+import { ScenicTemplateB } from './ScenicTemplateB';
+import { ScenicTemplateC } from './ScenicTemplateC';
+import { ScenicTemplateD } from './ScenicTemplateD';
+import { ScenicTemplateE } from './ScenicTemplateE';
+import { ScenicTemplateF } from './ScenicTemplateF';
+import { ScenicTemplateG } from './ScenicTemplateG';
+import { ScenicTemplateH } from './ScenicTemplateH';
 
 interface TemplateDispatcherProps {
   templateId: TemplateId;
@@ -121,6 +128,27 @@ export const TemplateDispatcher: React.FC<TemplateDispatcherProps> = ({
 
     case 'template-t':
       return <TemplateT data={safeData} primaryColor={primaryColor || '#0f766e'} />;
+
+    case 'template-scenic-b':
+      return <ScenicTemplateB data={safeData} primaryColor={primaryColor || '#1d4ed8'} />;
+
+    case 'template-scenic-c':
+      return <ScenicTemplateC data={safeData} primaryColor={primaryColor || '#d97706'} />;
+
+    case 'template-scenic-d':
+      return <ScenicTemplateD data={safeData} primaryColor={primaryColor || '#15803d'} />;
+
+    case 'template-scenic-e':
+      return <ScenicTemplateE data={safeData} primaryColor={primaryColor || '#9f1239'} />;
+
+    case 'template-scenic-f':
+      return <ScenicTemplateF data={safeData} primaryColor={primaryColor || '#1f2937'} />;
+
+    case 'template-scenic-g':
+      return <ScenicTemplateG data={safeData} primaryColor={primaryColor || '#047857'} />;
+
+    case 'template-scenic-h':
+      return <ScenicTemplateH data={safeData} primaryColor={primaryColor || '#78350f'} />;
 
     default:
       return <TemplateB data={safeData} primaryColor={primaryColor || '#1e3a5f'} />;

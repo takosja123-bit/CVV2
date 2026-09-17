@@ -135,6 +135,13 @@ export type TemplateId =
   | 'template-r' // Bold Crimson Header
   | 'template-s' // Graphite Tech Sidebar
   | 'template-t' // Minimal Two-Tone Slate
+  | 'template-scenic-b' // Scenic Angkor Wat - Blue Horizon
+  | 'template-scenic-c' // Scenic Angkor Wat - Golden Temple
+  | 'template-scenic-d' // Scenic Angkor Wat - Jungle Ruins
+  | 'template-scenic-e' // Scenic Angkor Wat - Burgundy Stone
+  | 'template-scenic-f' // Scenic Angkor Wat - Charcoal Ruins
+  | 'template-scenic-g' // Scenic Angkor Wat - Emerald Canopy
+  | 'template-scenic-h' // Scenic Angkor Wat - Ancient Roots
   // Legacy aliases for backward compatibility
   | 'classic'
   | 'modern'
