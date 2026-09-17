@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { SidebarSection, PlanTier, ADMIN_EMAIL } from '../../types';
+import { getPlanExpiryText } from '../../utils/planAccess';
 
 interface SidebarProps {
   activeSection: SidebarSection;
@@ -60,24 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
 
-  // Human-readable countdown for a paid plan's 30-day window, e.g.
-  // "Expires in 12 days" or "Expires today" / "Expired" if it's lapsed
-  // (a lapsed plan falls back to Free Plan elsewhere, but showing the
-  // literal date here helps explain why to the user).
-  let expiryText: string | null = null;
-  if (planExpiresAt) {
-    const msLeft = new Date(planExpiresAt).getTime() - Date.now();
-    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
-    if (daysLeft > 1) {
-      expiryText = `Expires in ${daysLeft} days`;
-    } else if (daysLeft === 1) {
-      expiryText = 'Expires tomorrow';
-    } else if (daysLeft === 0) {
-      expiryText = 'Expires today';
-    } else {
-      expiryText = 'Expired — renew to keep access';
-    }
-  }
+  const expiryText = getPlanExpiryText(planExpiresAt);
 
   const navItems: {
     id: SidebarSection;

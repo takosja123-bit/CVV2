@@ -8,6 +8,7 @@ import {
   JobItem,
   PlanTier,
   UserAccountProfile,
+  ADMIN_EMAIL,
 } from './types';
 import { getEffectivePlanTier } from './utils/planAccess';
 import {
@@ -161,6 +162,7 @@ export default function App() {
   // subscription's 30-day window has lapsed) — drives which CV templates
   // they're allowed to use in the Landing page carousel & the Builder.
   const [userPlanTier, setUserPlanTier] = useState<PlanTier>('Free Plan');
+  const [userPlanExpiresAt, setUserPlanExpiresAt] = useState<string | null>(null);
 
   // When a locked template is clicked from the Landing page or Builder, we
   // navigate to the Dashboard and ask it to pop open the Pricing page.
@@ -275,9 +277,11 @@ export default function App() {
             (u) => u.email.toLowerCase() === (firebaseUser.email || '').toLowerCase()
           );
           setUserPlanTier(getEffectivePlanTier(ownProfile));
+          setUserPlanExpiresAt(ownProfile?.planExpiresAt || null);
         } catch (e) {
           console.warn('Failed to resolve plan tier for user', e);
           setUserPlanTier('Free Plan');
+          setUserPlanExpiresAt(null);
         }
 
         try {
@@ -365,6 +369,7 @@ export default function App() {
         setCloudSyncStatus('offline');
         setUser(null);
         setUserPlanTier('Free Plan');
+        setUserPlanExpiresAt(null);
 
         try {
           const guestResumes = localStorage.getItem(getAccountResumesKey(null));
@@ -798,6 +803,8 @@ export default function App() {
           onCreateCV={handleCreateFromLanding}
           onGoToDashboard={handleNavigateToDashboard}
           userPlanTier={userPlanTier}
+          planExpiresAt={userPlanExpiresAt}
+          isAdmin={Boolean(user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase())}
           onRequireUpgrade={() => {
             setReturnToPageAfterPricing('landing');
             handleNavigateToDashboard();

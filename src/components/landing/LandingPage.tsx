@@ -4,7 +4,7 @@ import { TEMPLATES } from '../../data/initialData';
 import { TemplateCardThumbnail } from './TemplateCardThumbnail';
 import { TemplateCarousel } from './TemplateCarousel';
 import { TemplateDispatcher } from '../templates/TemplateDispatcher';
-import { canAccessTemplate } from '../../utils/planAccess';
+import { canAccessTemplate, getPlanExpiryText } from '../../utils/planAccess';
 import { DownloadMenu } from '../builder/DownloadMenu';
 import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck, Download, FileText, Palette, Check, LayoutGrid, SlidersHorizontal } from 'lucide-react';
 
@@ -15,6 +15,8 @@ interface LandingPageProps {
   onCreateCV: (templateId?: TemplateId) => void;
   onGoToDashboard?: () => void;
   userPlanTier?: PlanTier;
+  planExpiresAt?: string | null;
+  isAdmin?: boolean;
   onRequireUpgrade?: () => void;
 }
 
@@ -25,11 +27,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onCreateCV,
   onGoToDashboard,
   userPlanTier = 'Free Plan',
+  planExpiresAt = null,
+  isAdmin = false,
   onRequireUpgrade,
 }) => {
   const [activeTemplateId, setActiveTemplateId] = useState<TemplateId>(selectedTemplate || TEMPLATES[0].id);
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<'All' | PlanTier>('All');
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
+  const planExpiryText = getPlanExpiryText(planExpiresAt);
 
   const currentTemplate =
     TEMPLATES.find((t) => t.id === activeTemplateId) || TEMPLATES[0];
@@ -84,6 +89,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             className="hidden sm:inline-flex text-xs font-semibold text-white/90 hover:text-white px-2 py-2 transition-colors cursor-pointer"
           >
             How it works
+          </button>
+
+          {/* Plan tier + expiry, mirrors the Sidebar's badge so it reads the
+              same everywhere in the app. Clicking it opens the same
+              automatic PayWay checkout as every other upgrade entry point. */}
+          <button
+            onClick={() => onRequireUpgrade?.()}
+            className="hidden md:flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 transition-colors cursor-pointer"
+            title={isAdmin ? 'Full Access (Admin)' : 'View or manage your plan'}
+          >
+            <span className="text-[10px] font-bold text-white leading-none">
+              {isAdmin ? 'Full Access (Admin)' : userPlanTier}
+            </span>
+            {!isAdmin && planExpiryText && (
+              <span
+                className={`text-[9px] leading-none ${
+                  planExpiryText.startsWith('Expired') ? 'text-rose-300 font-semibold' : 'text-white/70'
+                }`}
+              >
+                {planExpiryText}
+              </span>
+            )}
           </button>
 
           {onGoToDashboard && (

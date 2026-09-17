@@ -52,6 +52,21 @@ export function getEffectivePlanTier(profile?: {
   return planTier;
 }
 
+/**
+ * Human-readable countdown for a paid plan's window, e.g. "Expires in 12
+ * days". Shared between the Sidebar and the LandingPage so the wording
+ * never drifts out of sync between the two places it's shown.
+ */
+export function getPlanExpiryText(planExpiresAt?: string | null): string | null {
+  if (!planExpiresAt) return null;
+  const msLeft = new Date(planExpiresAt).getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+  if (daysLeft > 1) return `Expires in ${daysLeft} days`;
+  if (daysLeft === 1) return 'Expires tomorrow';
+  if (daysLeft === 0) return 'Expires today';
+  return 'Expired — renew to keep access';
+}
+
 /** Can a user on `userPlan` use content that requires `requiredPlan`? Higher tiers include everything below them. */
 export function canAccessTemplate(userPlan: PlanTier, requiredPlan: PlanTier): boolean {
   return PLAN_RANK[userPlan] >= PLAN_RANK[requiredPlan];
