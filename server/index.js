@@ -49,10 +49,12 @@ app.post('/api/payments/create-transaction', (req, res) => {
 //    return_url above). Verify the signature, then grant the plan tier —
 //    this is the ONLY place a plan upgrade should actually be trusted from.
 app.post('/api/payments/callback', async (req, res) => {
-  const isValid = verifyPaywayPushback(req.body);
+  // Per ABA's docs, the signature rides in a header, not the JSON body.
+  const signature = req.headers['x-payway-hmac-sha512'];
+  const isValid = verifyPaywayPushback(req.body, signature);
 
   if (!isValid) {
-    console.warn('[payments] Rejected pushback with invalid hash.');
+    console.warn('[payments] Rejected pushback with invalid/missing signature.');
     return res.status(401).send('invalid signature');
   }
 

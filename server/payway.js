@@ -37,16 +37,17 @@ function nowReqTime() {
  * Builds the field set + HMAC-SHA512 hash for PayWay's "Create Transaction"
  * (/api/payment-gateway/v1/payments/purchase) endpoint.
  *
- * ⚠️ IMPORTANT — VERIFY BEFORE GOING LIVE:
- * ABA PayWay computes the hash over a specific ordered concatenation of the
- * field values, signed with HMAC-SHA512 using your API key as the secret,
- * then base64-encoded. The exact field order below is based on ABA's public
- * "Create Transaction" sample payload, but ABA has changed field sets
- * between API versions. Before accepting real money:
- *   1. Log into your PayWay merchant dashboard → Developer docs.
- *   2. Compare FIELD_ORDER below against the current sample request/hash.
- *   3. Send one sandbox transaction and confirm PayWay returns success
- *      instead of an "invalid hash" error.
+ * Field order confirmed against ABA's current official docs
+ * (https://developer.payway.com.kh/purchase-14530820e0.md), from their PHP
+ * sample:
+ *   $b4hash = $req_time . $merchant_id . $tran_id . $amount . $items .
+ *     $shipping . $firstname . $lastname . $email . $phone . $type .
+ *     $payment_option . $return_url . $cancel_url . $continue_success_url .
+ *     $return_deeplink . $currency . $custom_fields . $return_params .
+ *     $payout . $lifetime . $additional_params . $google_pay_token .
+ *     $skip_success_page
+ * Every field in that formula must be included in the hash (as an empty
+ * string if unused) even if it isn't otherwise sent as a form field.
  */
 const FIELD_ORDER = [
   'req_time',
@@ -61,12 +62,18 @@ const FIELD_ORDER = [
   'phone',
   'type',
   'payment_option',
-  'currency',
-  'custom_fields',
   'return_url',
+  'cancel_url',
   'continue_success_url',
   'return_deeplink',
+  'currency',
+  'custom_fields',
   'return_params',
+  'payout',
+  'lifetime',
+  'additional_params',
+  'google_pay_token',
+  'skip_success_page',
 ];
 
 export function createPaywayTransaction({ planId, paymentOption, customer, appUrl }) {
@@ -122,12 +129,18 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     // 'abapay' shows ABA Pay / KHQR / ABA mobile app on PayWay's checkout page.
     // 'cards' shows the Visa/Mastercard card-entry form instead.
     payment_option: paymentOption === 'cards' ? 'cards' : 'abapay',
+    return_url: `${appUrl}/api/payments/callback`,
+    cancel_url: '',
+    continue_success_url: `${appUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
+    return_deeplink: '',
     currency: 'USD',
     custom_fields: base64(JSON.stringify({ planId, uid })),
-    return_url: `${appUrl}/api/payments/callback`,
-  continue_success_url: `${appUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
-    return_deeplink: '',
     return_params: base64(JSON.stringify({ planId, tranId, uid })),
+    payout: '',
+    lifetime: '',
+    additional_params: '',
+    google_pay_token: '',
+    skip_success_page: '',
   };
 
   const hashInput = FIELD_ORDER.map((key) => fields[key] ?? '').join('');
@@ -141,23 +154,32 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
 }
 
 /**
- * Verifies a pushback/webhook notification from PayWay. PayWay signs the
- * pushback body the same way (HMAC-SHA512 of the concatenated field values,
- * base64-encoded) — confirm the exact pushback field order against your
- * merchant dashboard docs too, it differs from the create-transaction hash.
+ * Verifies a pushback/webhook notification from PayWay.
+ *
+ * Per ABA's official docs (ecommerce-checkout-3158159f0.md), the signature
+ * is NOT a field inside the JSON body — it arrives in the
+ * `X-PAYWAY-HMAC-SHA512` request header. The body itself (e.g.
+ * { tran_id, apv, status, return_params, merchant_ref }) is signed by:
+ *   1. Sorting its fields by key, ascending (PHP ksort).
+ *   2. Concatenating just the values, in that sorted order (JSON-encoding
+ *      any value that's itself an array/object).
+ *   3. HMAC-SHA512 with the API key, base64-encoded.
  */
-export function verifyPaywayPushback(body) {
+export function verifyPaywayPushback(body, signature) {
   const apiKey = process.env.ABA_PAYWAY_API_KEY;
-  if (!apiKey || !body?.hash) return false;
+  if (!apiKey || !signature || !body) return false;
 
-  const { hash, ...rest } = body;
-  const hashInput = Object.keys(rest)
+  const hashInput = Object.keys(body)
     .sort()
-    .map((k) => rest[k] ?? '')
+    .map((k) => {
+      const v = body[k];
+      if (v === undefined || v === null) return '';
+      return typeof v === 'object' ? JSON.stringify(v) : String(v);
+    })
     .join('');
   const expected = crypto.createHmac('sha512', apiKey).update(hashInput).digest('base64');
   try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hash));
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
   } catch {
     return false;
   }
