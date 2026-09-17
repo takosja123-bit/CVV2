@@ -131,7 +131,7 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     payment_option: paymentOption === 'cards' ? 'cards' : 'abapay',
     return_url: `${appUrl}/api/payments/callback`,
     cancel_url: '',
-    continue_success_url: `${frontendUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}#dashboard`,
+    continue_success_url: `${frontendUrl}/?upgrade=success&plan=${encodeURIComponent(planId)}&tran_id=${encodeURIComponent(tranId)}#dashboard`,
     return_deeplink: '',
     currency: 'USD',
     custom_fields: base64(JSON.stringify({ planId, uid })),
@@ -158,6 +158,37 @@ export function createPaywayTransaction({ planId, paymentOption, customer, appUr
     fields: { ...fields, hash },
     tranId,
   };
+}
+
+/**
+ * Calls PayWay's "Check Transaction" API to get a transaction's real status
+ * directly from PayWay — used as a fallback when we can't rely on the
+ * webhook/pushback having reached us (e.g. return_url domain not yet
+ * whitelisted on the merchant profile). See
+ * https://developer.payway.com.kh/check-transaction-14530826e0.md
+ */
+export async function checkPaywayTransactionStatus(tranId) {
+  const merchantId = process.env.ABA_PAYWAY_MERCHANT_ID;
+  const apiKey = process.env.ABA_PAYWAY_API_KEY;
+  if (!merchantId || !apiKey) {
+    throw new Error('ABA_PAYWAY_MERCHANT_ID / ABA_PAYWAY_API_KEY are not set.');
+  }
+
+  const reqTime = nowReqTime();
+  // Per the docs' PHP sample: $b4hash = $req_time . $merchant_id . $tran_id;
+  const hashInput = `${reqTime}${merchantId}${tranId}`;
+  const hash = crypto.createHmac('sha512', apiKey).update(hashInput).digest('base64');
+
+  const response = await fetch(
+    `${PAYWAY_BASE_URL}/api/payment-gateway/v1/payments/check-transaction-2`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ req_time: reqTime, merchant_id: merchantId, tran_id: tranId, hash }),
+    }
+  );
+  const body = await response.json();
+  return body; // { data: { payment_status_code, payment_status, status: {code, message}, ... } }
 }
 
 /**

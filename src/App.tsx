@@ -46,6 +46,7 @@ import {
   setTemplatePlanTier,
 } from './firebase/cvService';
 import { getDeviceId, getBrowserFingerprint } from './utils/deviceId';
+import { verifyAndGrantPayment } from './utils/paymentService';
 
 // Account-specific local storage keys to ensure each user account stores only its own data
 const getAccountResumesKey = (uid?: string | null) =>
@@ -182,6 +183,56 @@ export default function App() {
       localStorage.setItem('jobifycv_return_page', returnToPageAfterPricing);
     }
   }, [returnToPageAfterPricing]);
+
+  // Fallback for granting a paid plan: PayWay's webhook may never reach our
+  // backend (e.g. its domain isn't whitelisted on the merchant profile yet),
+  // so as a backup, verify+grant right here as soon as we land back from
+  // checkout with a tran_id in the URL. The backend independently confirms
+  // with PayWay before granting anything, so this is safe even though it's
+  // triggered from the browser.
+  const [paymentStatusMessage, setPaymentStatusMessage] = useState<{
+    text: string;
+    kind: 'success' | 'error' | 'info';
+  } | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgrade') !== 'success') return;
+    const tranId = params.get('tran_id');
+
+    // Strip these from the URL immediately so a refresh doesn't re-trigger
+    // verification (or re-run the page-restore logic above) forever.
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, '', cleanUrl);
+
+    if (!tranId) return; // Older/edge-case links without a tran_id — nothing to verify here.
+
+    verifyAndGrantPayment(tranId)
+      .then((result) => {
+        if (result.granted) {
+          setPaymentStatusMessage({
+            text: `Payment confirmed — your ${result.planId || 'plan'} is now active. Refreshing…`,
+            kind: 'success',
+          });
+          // Reload so every part of the app (plan tier, template access,
+          // quotas) picks up the freshly-granted plan from Firestore.
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          setPaymentStatusMessage({
+            text: `We couldn't confirm this payment yet (status: ${
+              result.paymentStatus || 'unknown'
+            }). If you were charged, contact support with transaction ID ${tranId}.`,
+            kind: 'info',
+          });
+        }
+      })
+      .catch((err) => {
+        setPaymentStatusMessage({
+          text: `Couldn't verify your payment automatically (${err.message}). If you were charged, contact support with transaction ID ${tranId}.`,
+          kind: 'error',
+        });
+      });
+  }, []);
   // If the upgrade prompt came from the in-builder "Browse Designs" modal
   // specifically, reopen that modal too when we land back on the builder.
   const [reopenBuilderDesignModal, setReopenBuilderDesignModal] = useState(false);
@@ -670,6 +721,27 @@ export default function App() {
       {deviceBlockedMessage && (
         <div className="fixed inset-x-0 top-0 z-[100] bg-red-600 text-white text-xs sm:text-sm font-semibold text-center py-2.5 px-4 shadow-lg">
           {deviceBlockedMessage}
+        </div>
+      )}
+      {paymentStatusMessage && (
+        <div
+          className={`fixed inset-x-0 top-0 z-[100] text-white text-xs sm:text-sm font-semibold text-center py-2.5 px-4 shadow-lg flex items-center justify-center gap-3 ${
+            paymentStatusMessage.kind === 'success'
+              ? 'bg-emerald-600'
+              : paymentStatusMessage.kind === 'error'
+              ? 'bg-red-600'
+              : 'bg-amber-500'
+          }`}
+        >
+          <span>{paymentStatusMessage.text}</span>
+          {paymentStatusMessage.kind !== 'success' && (
+            <button
+              onClick={() => setPaymentStatusMessage(null)}
+              className="underline underline-offset-2 hover:no-underline shrink-0"
+            >
+              Dismiss
+            </button>
+          )}
         </div>
       )}
       {quotaMessage && (

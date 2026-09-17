@@ -22,6 +22,29 @@ export interface CheckoutCustomer {
 export class PaymentServiceError extends Error {}
 
 /**
+ * Fallback for when PayWay's webhook doesn't reach our backend (e.g. the
+ * domain isn't whitelisted on the merchant profile yet). Call this once,
+ * right after the customer lands back on continue_success_url, passing the
+ * tran_id that was included in that URL. The backend independently
+ * verifies with PayWay before granting anything — this call by itself
+ * proves nothing.
+ */
+export async function verifyAndGrantPayment(
+  tranId: string
+): Promise<{ granted: boolean; planId?: string; paymentStatus?: string }> {
+  const response = await fetch(`${PAYMENTS_API_URL}/payments/verify-and-grant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tranId }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new PaymentServiceError(body.error || 'Could not verify the payment.');
+  }
+  return body;
+}
+
+/**
  * Asks our backend to build a signed ABA PayWay "create transaction" request,
  * then submits it as a real HTML form POST — which is what makes the browser
  * navigate to PayWay's own hosted checkout page (checkout.payway.com.kh) to

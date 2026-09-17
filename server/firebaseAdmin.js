@@ -43,6 +43,42 @@ function getFirestoreAdmin() {
   return firestoreInstance;
 }
 
+const PENDING_PAYMENTS_COLLECTION = 'pendingPayments';
+
+/**
+ * Records what a transaction is FOR at the moment we create it — which uid
+ * gets which plan. This is the source of truth the verify-and-grant
+ * endpoint checks against; it never trusts a client-supplied uid/planId
+ * directly, only a client-supplied tran_id used to look this up.
+ */
+export async function recordPendingPayment(tranId, uid, planId, amount) {
+  const db = getFirestoreAdmin();
+  if (!db) return; // Same graceful-degradation as grantPlanTier.
+  await db.collection(PENDING_PAYMENTS_COLLECTION).doc(tranId).set({
+    uid,
+    planId,
+    amount,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function getPendingPayment(tranId) {
+  const db = getFirestoreAdmin();
+  if (!db) return null;
+  const snap = await db.collection(PENDING_PAYMENTS_COLLECTION).doc(tranId).get();
+  return snap.exists ? snap.data() : null;
+}
+
+export async function markPendingPaymentGranted(tranId) {
+  const db = getFirestoreAdmin();
+  if (!db) return;
+  await db
+    .collection(PENDING_PAYMENTS_COLLECTION)
+    .doc(tranId)
+    .set({ status: 'granted', grantedAt: new Date().toISOString() }, { merge: true });
+}
+
 /**
  * Grants (or resets) a plan tier for a user, mirroring what
  * updateUserPlanTier() in src/firebase/cvService.ts does client-side — but
