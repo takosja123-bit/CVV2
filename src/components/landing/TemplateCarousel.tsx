@@ -211,6 +211,13 @@ interface TemplateCarouselProps {
   // Which templates to show, e.g. after a plan-tier filter is applied.
   // Defaults to the full template list.
   templates?: TemplateConfig[];
+  // Show the built-in "All / Free Plan / Basic Plan / ..." filter pill row
+  // above the carousel. Leave this off (default) when the parent screen
+  // already renders its own plan-tier filter (e.g. the public LandingPage)
+  // — turning it on there would show two identical filter bars stacked on
+  // top of each other. Turn it on for screens with no filter of their own
+  // (e.g. the "Choose a Template" dashboard modal).
+  showPlanFilterPills?: boolean;
 }
 
 // Tier-appropriate colors for the small "locked" corner badge — kept in sync
@@ -236,6 +243,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   userPlanTier = 'Free Plan',
   onRequireUpgrade,
   templates = TEMPLATES,
+  showPlanFilterPills = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [useSampleData, setUseSampleData] = useState<boolean>(true);
@@ -315,39 +323,43 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
 
   return (
     <div className="relative w-full py-6">
-      {/* Plan-tier Filter Pills */}
-      <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center gap-2 flex-wrap">
-        {PLAN_FILTERS.map((filter) => {
-          const isActive = activeFilter === filter;
-          return (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setActiveFilter(filter)}
-              className={`flex items-center gap-2 text-xs font-semibold pl-4 pr-2 py-2 rounded-full border transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-[#1d3fae] border-[#1d3fae] text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              <span>{filter}</span>
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+      {/* Plan-tier Filter Pills — opt-in, see showPlanFilterPills doc above */}
+      {showPlanFilterPills && (
+        <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center gap-2 flex-wrap">
+          {PLAN_FILTERS.map((filter) => {
+            const isActive = activeFilter === filter;
+            return (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setActiveFilter(filter)}
+                className={`flex items-center gap-2 text-xs font-semibold pl-4 pr-2 py-2 rounded-full border transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#1d3fae] border-[#1d3fae] text-white shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                {filterCounts[filter]}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span>{filter}</span>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {filterCounts[filter]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Top Controls Bar */}
       <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            Browse {activeFilter === 'All' ? 'All' : activeFilter} {visibleTemplates.length} Designs
+            {showPlanFilterPills
+              ? `Browse ${activeFilter === 'All' ? 'All' : activeFilter} ${visibleTemplates.length} Designs`
+              : `Browse All ${templates.length} Designs`}
           </span>
           <span className="text-[11px] text-slate-500">• Scroll or use navigation arrows</span>
         </div>

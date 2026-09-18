@@ -82,6 +82,7 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
             onCreateCV={handleStartWithTemplate}
             userPlanTier={userPlanTier}
             onRequireUpgrade={onRequireUpgrade}
+            showPlanFilterPills
           />
         </div>
 
