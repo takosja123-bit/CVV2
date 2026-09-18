@@ -12,7 +12,7 @@ export interface ScenicTemplateProps {
 
 const ContactRow: React.FC<{ icon: LucideIcon; text: string }> = ({ icon: Icon, text }) => (
   <div className="flex items-center gap-2">
-    <span className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0 backdrop-blur-sm">
+    <span className="w-5 h-5 rounded-full bg-white/30 border border-white/30 flex items-center justify-center shrink-0">
       <Icon className="w-2.5 h-2.5 text-white" />
     </span>
     <span className="text-[9.5px] text-white/95 leading-tight break-all drop-shadow-sm">
@@ -85,7 +85,7 @@ export const ScenicTemplateBase: React.FC<ScenicTemplateProps> = ({
                   return (
                     <span
                       key={i}
-                      className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-white backdrop-blur-sm"
+                      className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/25 border border-white/30 text-white"
                     >
                       {name}
                     </span>
@@ -106,7 +106,7 @@ export const ScenicTemplateBase: React.FC<ScenicTemplateProps> = ({
                   return (
                     <span
                       key={i}
-                      className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-white backdrop-blur-sm"
+                      className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/25 border border-white/30 text-white"
                     >
                       {name}
                     </span>
