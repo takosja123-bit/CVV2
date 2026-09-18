@@ -5,9 +5,9 @@ import crypto from 'crypto';
 // what gets billed — never trust a price sent from the browser).
 export const PLAN_PRICES_USD = {
   'Free Plan': 0,
-  'Basic Plan': 2.99,
-  'Pro Plan': 6.99,
-  'Premium Plan': 14.99,
+  'Basic Plan': 0.99,
+  'Pro Plan': 4.99,
+  'Premium Plan': 20.0,
 };
 
 export const PAYWAY_BASE_URL =

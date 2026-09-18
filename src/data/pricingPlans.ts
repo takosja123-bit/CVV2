@@ -44,7 +44,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'Basic Plan',
     name: 'Basic',
     tagline: 'For active jobseekers',
-    priceUsd: 2.99,
+    priceUsd: 0.99,
     period: 'month',
     accent: {
       ring: 'ring-amber-300',
@@ -65,7 +65,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'Pro Plan',
     name: 'Pro',
     tagline: 'Get noticed by recruiters',
-    priceUsd: 6.99,
+    priceUsd: 4.99,
     period: 'month',
     badge: 'Most popular',
     accent: {
@@ -88,7 +88,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'Premium Plan',
     name: 'Premium',
     tagline: 'Maximum visibility',
-    priceUsd: 14.99,
+    priceUsd: 20.0,
     period: 'month',
     accent: {
       ring: 'ring-violet-400',
