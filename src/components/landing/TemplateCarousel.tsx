@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { CVData, TemplateId, TemplateConfig, PlanTier } from '../../types';
 import { TEMPLATES } from '../../data/initialData';
 import { TemplateDispatcher } from '../templates/TemplateDispatcher';
@@ -246,6 +246,15 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   showPlanFilterPills = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Snapshot of scrollLeft taken at the exact moment a template card is
+  // clicked, restored right after the resulting re-render commits (see the
+  // useLayoutEffect below, keyed on selectedTemplate). This is a direct,
+  // deterministic fix for the browser silently re-snapping scroll position
+  // when a card's selected/unselected styling changes -- it doesn't try to
+  // out-guess *why* the browser jumps (scroll-snap + content-visibility
+  // interactions are notoriously inconsistent across engines), it just
+  // puts the scroll position back exactly where the user left it.
+  const pendingRestoreScrollLeftRef = useRef<number | null>(null);
   const [useSampleData, setUseSampleData] = useState<boolean>(true);
   const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
   const [canScrollRight, setCanScrollRight] = useState<boolean>(true);
@@ -311,6 +320,24 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleTemplates]);
+
+  // Restore the scroll position right after selecting a card. Clicking a
+  // card doesn't move the scroll container in any way that should require
+  // this -- it only changes which card carries the "selected" ring/scale
+  // styling -- but some browsers, when scroll-snap-type: mandatory is
+  // combined with a child's box size/paint changing (as happens here via
+  // the selected card's scale-[1.01] and content-visibility settling to
+  // its real size), decide the current scroll offset is no longer a valid
+  // snap point and silently re-snap to the nearest one, which in practice
+  // is usually all the way back to the start of the list. useLayoutEffect
+  // runs synchronously right after the DOM commits and before the browser
+  // paints, so this correction happens before the user ever sees a jump.
+  useLayoutEffect(() => {
+    if (pendingRestoreScrollLeftRef.current !== null && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = pendingRestoreScrollLeftRef.current;
+      pendingRestoreScrollLeftRef.current = null;
+    }
+  }, [selectedTemplate]);
 
   const handleScrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -466,6 +493,9 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
                 onRequireUpgrade?.(tmpl);
                 return;
               }
+              if (scrollContainerRef.current) {
+                pendingRestoreScrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+              }
               onSelectTemplate(tmpl.id);
             };
 
@@ -503,23 +533,21 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
                 {/* CV Document Card matching screenshot */}
                 <div
                   onClick={handlePick}
-                  style={{
-                    // Same perf intent as before, just moved off the
-                    // snap-aligned parent — content-visibility on a
-                    // scroll-snap-align element can perturb the browser's
-                    // snap-point/scroll-position math when a card flips
-                    // between skipped/rendered. This div isn't a snap
-                    // target itself, so it's a safe place for it.
-                    contentVisibility: 'auto',
-                    containIntrinsicSize: '300px 440px',
-                  }}
                   className={`bg-white rounded-xs shadow-md group-hover:shadow-2xl transition-all duration-300 border overflow-hidden relative cursor-pointer flex flex-col justify-between h-[420px] md:h-[460px] ${
                     isSelected
                       ? 'ring-4 ring-indigo-600/40 border-indigo-600 scale-[1.01]'
                       : 'border-slate-300/80 hover:border-slate-400'
                   }`}
                 >
-                  {/* Embedded Live Template Document — scaled down so the WHOLE
+                  {/* content-visibility: auto was here as a render-cost
+                      optimization (skip paint for offscreen cards), but its
+                      auto-estimated intrinsic size settling to the real
+                      rendered size on selection was the root cause of the
+                      scroll-snap container jumping back to the start when a
+                      card was picked -- removed rather than fought further;
+                      the useLayoutEffect scroll-restore above is a more
+                      direct and reliable fix for the actual symptom users
+                      hit, regardless of what triggers it. */}                  {/* Embedded Live Template Document — scaled down so the WHOLE
                       resume is visible at a glance instead of needing to scroll. */}
                   <div
                     className={`w-full h-full overflow-hidden bg-white select-text ${
