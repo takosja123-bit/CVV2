@@ -473,17 +473,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
               <div
                 key={tmpl.id}
                 className="shrink-0 snap-center flex flex-col group"
-                style={{
-                  width: 'clamp(260px, 22vw, 340px)',
-                  // Lets the browser skip layout/paint/compositing entirely
-                  // for cards far outside the visible scroll area — with up
-                  // to ~39 full resume renders sitting in this one scroll
-                  // container, this is what actually keeps arrow-click
-                  // scrolling light instead of the browser having to keep
-                  // every single one painted and composited at once.
-                  contentVisibility: 'auto',
-                  containIntrinsicSize: '300px 490px',
-                }}
+                style={{ width: 'clamp(260px, 22vw, 340px)' }}
               >
                 {/* Template Info Pill */}
                 <div className="flex items-center justify-between px-2 mb-2.5">
@@ -513,6 +503,16 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
                 {/* CV Document Card matching screenshot */}
                 <div
                   onClick={handlePick}
+                  style={{
+                    // Same perf intent as before, just moved off the
+                    // snap-aligned parent — content-visibility on a
+                    // scroll-snap-align element can perturb the browser's
+                    // snap-point/scroll-position math when a card flips
+                    // between skipped/rendered. This div isn't a snap
+                    // target itself, so it's a safe place for it.
+                    contentVisibility: 'auto',
+                    containIntrinsicSize: '300px 440px',
+                  }}
                   className={`bg-white rounded-xs shadow-md group-hover:shadow-2xl transition-all duration-300 border overflow-hidden relative cursor-pointer flex flex-col justify-between h-[420px] md:h-[460px] ${
                     isSelected
                       ? 'ring-4 ring-indigo-600/40 border-indigo-600 scale-[1.01]'
