@@ -241,6 +241,21 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   const [useSampleData, setUseSampleData] = useState<boolean>(true);
   const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
   const [canScrollRight, setCanScrollRight] = useState<boolean>(true);
+  const [activeFilter, setActiveFilter] = useState<'All' | PlanTier>('All');
+
+  // Plan-tier filter pills (e.g. "All 39", "Free Plan 9", "Pro Plan 21"...).
+  // Counts are always taken from the full incoming `templates` list so they
+  // stay stable no matter which pill is currently active.
+  const PLAN_FILTERS: Array<'All' | PlanTier> = ['All', 'Free Plan', 'Basic Plan', 'Pro Plan', 'Premium Plan'];
+  const filterCounts: Record<'All' | PlanTier, number> = {
+    All: templates.length,
+    'Free Plan': templates.filter((t) => t.planTier === 'Free Plan').length,
+    'Basic Plan': templates.filter((t) => t.planTier === 'Basic Plan').length,
+    'Pro Plan': templates.filter((t) => t.planTier === 'Pro Plan').length,
+    'Premium Plan': templates.filter((t) => t.planTier === 'Premium Plan').length,
+  };
+  const visibleTemplates =
+    activeFilter === 'All' ? templates : templates.filter((t) => t.planTier === activeFilter);
 
   // Check scroll positions for disabling arrows
   const checkScroll = () => {
@@ -252,7 +267,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
   };
 
   useEffect(() => {
-    // Recalculate scroll-arrow availability whenever the filtered template
+    // Recalculate scroll-arrow availability whenever the visible template
     // list changes (e.g. switching plan-tier tabs) — otherwise an empty
     // filter (like "Premium Plan" with 0 templates) leaves the arrows stuck
     // in whatever state they were last in, even after switching back to a
@@ -264,7 +279,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
     window.addEventListener('resize', checkScroll);
     return () => window.removeEventListener('resize', checkScroll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templates]);
+  }, [visibleTemplates]);
 
   const handleScrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -300,11 +315,39 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
 
   return (
     <div className="relative w-full py-6">
+      {/* Plan-tier Filter Pills */}
+      <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center gap-2 flex-wrap">
+        {PLAN_FILTERS.map((filter) => {
+          const isActive = activeFilter === filter;
+          return (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setActiveFilter(filter)}
+              className={`flex items-center gap-2 text-xs font-semibold pl-4 pr-2 py-2 rounded-full border transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-[#1d3fae] border-[#1d3fae] text-white shadow-sm'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <span>{filter}</span>
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {filterCounts[filter]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Top Controls Bar */}
       <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            Browse All {templates.length} Designs
+            Browse {activeFilter === 'All' ? 'All' : activeFilter} {visibleTemplates.length} Designs
           </span>
           <span className="text-[11px] text-slate-500">• Scroll or use navigation arrows</span>
         </div>
@@ -371,7 +414,12 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
           className="flex gap-6 md:gap-8 overflow-x-auto px-6 md:px-14 scrollbar-none snap-x snap-mandatory py-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {templates.map((tmpl) => {
+          {visibleTemplates.length === 0 && (
+            <div className="flex items-center justify-center w-full py-16 text-sm text-slate-500 font-medium">
+              No templates in this plan yet.
+            </div>
+          )}
+          {visibleTemplates.map((tmpl) => {
             const isSelected = tmpl.id === selectedTemplate;
             const renderData = getTemplateRenderData(tmpl.id);
             const isLocked = !canAccessTemplate(userPlanTier as PlanTier, tmpl.planTier);
