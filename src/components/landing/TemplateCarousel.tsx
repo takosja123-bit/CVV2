@@ -286,15 +286,37 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
       scrollContainerRef.current.scrollTo({ left: 0 });
     }
     checkScroll();
+
+    // The container's real width can still be settling (e.g. mid-way
+    // through the parent modal's open animation) at the exact moment this
+    // effect runs, which can freeze the right arrow as permanently
+    // "disabled" from a premature measurement. Re-check a moment later,
+    // and keep re-checking via ResizeObserver for as long as this
+    // template list is mounted, so the arrows self-correct instead of
+    // getting stuck.
+    const timeoutId = window.setTimeout(checkScroll, 200);
+
+    const node = scrollContainerRef.current;
+    const resizeObserver =
+      node && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => checkScroll()) : null;
+    if (node && resizeObserver) {
+      resizeObserver.observe(node);
+    }
+
     window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
+    return () => {
+      window.clearTimeout(timeoutId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', checkScroll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleTemplates]);
 
   const handleScrollLeft = () => {
     if (scrollContainerRef.current) {
+      const scrollAmount = Math.max(scrollContainerRef.current.clientWidth * 0.85, 260);
       scrollContainerRef.current.scrollBy({
-        left: -480,
+        left: -scrollAmount,
         behavior: 'smooth',
       });
     }
@@ -302,8 +324,9 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
 
   const handleScrollRight = () => {
     if (scrollContainerRef.current) {
+      const scrollAmount = Math.max(scrollContainerRef.current.clientWidth * 0.85, 260);
       scrollContainerRef.current.scrollBy({
-        left: 480,
+        left: scrollAmount,
         behavior: 'smooth',
       });
     }
@@ -425,7 +448,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
         <div
           ref={scrollContainerRef}
           onScroll={checkScroll}
-          className="flex gap-6 md:gap-8 overflow-x-auto px-6 md:px-14 scrollbar-none snap-x snap-mandatory py-2"
+          className="flex gap-6 md:gap-8 overflow-x-auto px-6 md:px-14 scrollbar-none snap-x snap-proximity py-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleTemplates.length === 0 && (
