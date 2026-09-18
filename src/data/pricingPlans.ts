@@ -88,7 +88,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: 'Premium Plan',
     name: 'Premium',
     tagline: 'Maximum visibility',
-    priceUsd: 20.0,
+    priceUsd: 19.99,
     period: 'month',
     accent: {
       ring: 'ring-violet-400',

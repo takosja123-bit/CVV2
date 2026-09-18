@@ -7,7 +7,7 @@ export const PLAN_PRICES_USD = {
   'Free Plan': 0,
   'Basic Plan': 0.99,
   'Pro Plan': 4.99,
-  'Premium Plan': 20.0,
+  'Premium Plan': 19.99,
 };
 
 export const PAYWAY_BASE_URL =
