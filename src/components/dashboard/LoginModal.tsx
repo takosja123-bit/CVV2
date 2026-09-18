@@ -56,8 +56,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   currentUser,
   onAuthSuccess,
 }) => {
-  if (!isOpen) return null;
-
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -67,6 +65,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Must come after every hook above — see the same note in
+  // TemplatePickerModal.tsx. Returning early before hooks run makes React
+  // call a different number of hooks depending on isOpen, which silently
+  // corrupts this component's state (e.g. a typed-in email/password resets).
+  if (!isOpen) return null;
 
   const handleGoogleSignIn = async () => {
     setLoading(true);

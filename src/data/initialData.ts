@@ -674,6 +674,22 @@ export function applyTemplatePlanOverrides(overrides: Record<string, PlanTier>):
   });
 }
 
+/**
+ * Removes "deleted" (admin-hidden) templates from the shared TEMPLATES array
+ * in place, so every consumer (landing page, builder, pickers) stops
+ * offering them immediately, without needing prop-threading. The template's
+ * component code is untouched — this only affects the selectable list.
+ */
+export function removeHiddenTemplates(hiddenIds: string[]): void {
+  if (!hiddenIds || hiddenIds.length === 0) return;
+  const hiddenSet = new Set(hiddenIds);
+  for (let i = TEMPLATES.length - 1; i >= 0; i--) {
+    if (hiddenSet.has(TEMPLATES[i].id)) {
+      TEMPLATES.splice(i, 1);
+    }
+  }
+}
+
 export const COLOR_PALETTES = [
   { name: 'Navy Blue', color: '#1e3a5f' },
   { name: 'Slate Gray', color: '#475569' },

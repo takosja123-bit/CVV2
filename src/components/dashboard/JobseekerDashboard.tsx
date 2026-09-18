@@ -49,9 +49,10 @@ import {
   unblockDevice,
   checkAndIncrementDailyCvQuota,
   setTemplatePlanTier,
+  setTemplateHidden,
 } from '../../firebase/cvService';
 import { getEffectivePlanTier, isPlanExpired } from '../../utils/planAccess';
-import { applyTemplatePlanOverrides } from '../../data/initialData';
+import { applyTemplatePlanOverrides, removeHiddenTemplates } from '../../data/initialData';
 import { Check, ShieldCheck, Sparkles, User } from 'lucide-react';
 
 interface JobseekerDashboardProps {
@@ -680,6 +681,14 @@ export const JobseekerDashboard: React.FC<JobseekerDashboardProps> = ({
     applyTemplatePlanOverrides({ [templateId]: tier });
   };
 
+  const handleAdminDeleteTemplate = async (templateId: TemplateId) => {
+    await setTemplateHidden(templateId, true);
+    // Soft-delete: remove it from the shared TEMPLATES array so it
+    // disappears from every part of the app right away.
+    removeHiddenTemplates([templateId]);
+    onTemplatesChanged?.();
+  };
+
   const handleAdminBlockUserDevice = async (targetUser: UserAccountProfile) => {
     const deviceIds = targetUser.deviceIds || [];
     const fingerprints = targetUser.fingerprints || [];
@@ -935,6 +944,7 @@ export const JobseekerDashboard: React.FC<JobseekerDashboardProps> = ({
             onSendToTelegram={handleAdminSendToTelegram}
             onUpdateUserPlan={handleAdminUpdateUserPlan}
             onUpdateTemplatePlanTier={handleAdminUpdateTemplatePlanTier}
+            onDeleteTemplate={handleAdminDeleteTemplate}
             onBlockUserDevice={handleAdminBlockUserDevice}
             blockedDevices={blockedDevices}
             onUnblockDevice={handleAdminUnblockDevice}

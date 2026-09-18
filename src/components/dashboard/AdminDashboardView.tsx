@@ -68,6 +68,7 @@ interface AdminDashboardViewProps {
   onEditJob: (job: PublicJob) => void;
   onDeleteJob: (jobId: string) => void;
   onUpdateTemplatePlanTier: (templateId: TemplateId, planTier: PlanTier) => Promise<void>;
+  onDeleteTemplate: (templateId: TemplateId) => Promise<void>;
 }
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
@@ -88,6 +89,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onEditJob,
   onDeleteJob,
   onUpdateTemplatePlanTier,
+  onDeleteTemplate,
 }) => {
   const [activeTab, setActiveTab] = useState<'submissions' | 'users' | 'blocked' | 'telegram' | 'jobs' | 'templates'>('submissions');
   // Local mirror of each template's plan tier so the dropdown reflects saves
@@ -97,6 +99,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
   const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateConfig | null>(null);
+  const [deletedTemplateIds, setDeletedTemplateIds] = useState<Set<string>>(new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   // Telegram settings local state
@@ -232,6 +237,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setTimeout(() => setActionFeedback(null), 3000);
     } finally {
       setSavingTemplateId(null);
+    }
+  };
+
+  const handleConfirmDeleteTemplate = async (templateId: TemplateId, templateName: string) => {
+    setDeletingTemplateId(templateId);
+    try {
+      await onDeleteTemplate(templateId);
+      setDeletedTemplateIds((prev) => new Set(prev).add(templateId));
+      setActionFeedback(`"${templateName}" removed from selectable templates.`);
+      setTimeout(() => setActionFeedback(null), 3000);
+    } catch (e) {
+      setActionFeedback('Failed to delete template — please try again.');
+      setTimeout(() => setActionFeedback(null), 3000);
+    } finally {
+      setDeletingTemplateId(null);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -1202,10 +1223,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <th className="py-3 px-4">Template</th>
                     <th className="py-3 px-4">Style Badge</th>
                     <th className="py-3 px-4 text-right">Required Plan</th>
+                    <th className="py-3 px-4 text-right">Delete</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {TEMPLATES.map((tmpl: TemplateConfig) => {
+                  {TEMPLATES.filter((tmpl) => !deletedTemplateIds.has(tmpl.id)).map((tmpl: TemplateConfig) => {
                     const currentTier = templateTiers[tmpl.id] ?? tmpl.planTier;
                     return (
                       <tr key={tmpl.id} className="hover:bg-slate-50/60 transition-colors">
@@ -1256,6 +1278,37 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <option value="Pro Plan">Pro Plan</option>
                             <option value="Premium Plan">Premium Plan</option>
                           </select>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          {confirmDeleteId === tmpl.id ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="text-[10px] text-slate-500 mr-1">Sure?</span>
+                              <button
+                                type="button"
+                                disabled={deletingTemplateId === tmpl.id}
+                                onClick={() => handleConfirmDeleteTemplate(tmpl.id, tmpl.name)}
+                                className="px-2.5 py-1 text-[11px] font-bold rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 cursor-pointer"
+                              >
+                                {deletingTemplateId === tmpl.id ? 'Deleting…' : 'Yes, delete'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="px-2.5 py-1 text-[11px] font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(tmpl.id)}
+                              title="Remove this template from the app"
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

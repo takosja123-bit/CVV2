@@ -17,6 +17,7 @@ import {
   sanitizeResumeList,
   createDefaultResumeForUser,
   applyTemplatePlanOverrides,
+  removeHiddenTemplates,
 } from './data/initialData';
 import { sanitizeCVData } from './utils/sanitizeData';
 import { LandingPage } from './components/landing/LandingPage';
@@ -45,6 +46,7 @@ import {
   checkAndIncrementDailyCvQuota,
   fetchTemplatePlanOverrides,
   setTemplatePlanTier,
+  fetchHiddenTemplateIds,
 } from './firebase/cvService';
 import { getDeviceId, getBrowserFingerprint } from './utils/deviceId';
 import { verifyAndGrantPayment } from './utils/paymentService';
@@ -410,8 +412,12 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const overrides = await fetchTemplatePlanOverrides();
+        const [overrides, hiddenIds] = await Promise.all([
+          fetchTemplatePlanOverrides(),
+          fetchHiddenTemplateIds(),
+        ]);
         applyTemplatePlanOverrides(overrides);
+        removeHiddenTemplates(hiddenIds);
         forceTemplatesRerender((n) => n + 1);
       } catch (e) {
         console.warn('Failed applying template plan-tier overrides', e);

@@ -38,6 +38,7 @@ const SUBMISSIONS_COLLECTION = 'submissions';
 const USERS_COLLECTION = 'userProfiles';
 const TEMPLATE_CONFIG_COLLECTION = 'templateConfig';
 const TEMPLATE_CONFIG_DOC_ID = 'planTiers';
+const TEMPLATE_HIDDEN_DOC_ID = 'hidden';
 const BLOCKED_DEVICES_COLLECTION = 'blockedDevices';
 const STORAGE_BLOCKED_DEVICES_KEY = 'jobseeker_blocked_devices_cache_v1';
 const STORAGE_PUBLIC_JOBS_KEY = 'jobseeker_public_jobs_cache_v1';
@@ -878,6 +879,30 @@ export async function fetchTemplatePlanOverrides(): Promise<Record<string, PlanT
 export async function setTemplatePlanTier(templateId: string, planTier: PlanTier): Promise<void> {
   const docRef = doc(db, TEMPLATE_CONFIG_COLLECTION, TEMPLATE_CONFIG_DOC_ID);
   await setDoc(docRef, { [templateId]: planTier }, { merge: true });
+}
+
+/**
+ * "Deleting" a template from the Admin panel is a soft delete: the template
+ * (and its component code) still exists, it's just removed from the pool of
+ * selectable designs across the whole app — landing page, builder, pickers.
+ * Reversible in principle (re-enable the id here) without a code change.
+ */
+export async function fetchHiddenTemplateIds(): Promise<string[]> {
+  try {
+    const snap = await getDoc(doc(db, TEMPLATE_CONFIG_COLLECTION, TEMPLATE_HIDDEN_DOC_ID));
+    if (snap.exists()) {
+      const data = (snap.data() as Record<string, boolean>) || {};
+      return Object.keys(data).filter((id) => data[id]);
+    }
+  } catch (e) {
+    console.warn('Failed fetching hidden template ids:', e);
+  }
+  return [];
+}
+
+export async function setTemplateHidden(templateId: string, hidden: boolean): Promise<void> {
+  const docRef = doc(db, TEMPLATE_CONFIG_COLLECTION, TEMPLATE_HIDDEN_DOC_ID);
+  await setDoc(docRef, { [templateId]: hidden }, { merge: true });
 }
 
 export async function updateUserPlanTier(

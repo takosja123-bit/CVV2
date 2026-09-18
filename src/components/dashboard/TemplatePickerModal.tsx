@@ -22,10 +22,19 @@ export const TemplatePickerModal: React.FC<TemplatePickerModalProps> = ({
   userPlanTier = 'Free Plan',
   onRequireUpgrade,
 }) => {
-  if (!isOpen) return null;
-
   const [selectedTmpl, setSelectedTmpl] = useState<TemplateId>(initialTemplateId || TEMPLATES[0].id);
   const [resumeTitle, setResumeTitle] = useState('My New Resume');
+
+  // IMPORTANT: this early return must come AFTER every hook above it, never
+  // before. React requires the exact same hooks to run, in the same order,
+  // on every render of a given component instance. This component is always
+  // rendered by its parent (just with isOpen true/false), so putting the
+  // `if (!isOpen) return null` before the useState calls meant zero hooks
+  // ran while closed and two hooks ran while open — an inconsistent hook
+  // count that corrupts this component's (and its children's, e.g. the
+  // template carousel's plan-tier filter) state in unpredictable ways,
+  // including state silently resetting back to its initial value.
+  if (!isOpen) return null;
 
   const handleStartWithTemplate = (templateIdToUse: TemplateId) => {
     const chosenTmpl = TEMPLATES.find((t) => t.id === templateIdToUse);
