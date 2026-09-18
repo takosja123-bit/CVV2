@@ -473,7 +473,17 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
               <div
                 key={tmpl.id}
                 className="shrink-0 snap-center flex flex-col group"
-                style={{ width: 'clamp(260px, 22vw, 340px)' }}
+                style={{
+                  width: 'clamp(260px, 22vw, 340px)',
+                  // Lets the browser skip layout/paint/compositing entirely
+                  // for cards far outside the visible scroll area — with up
+                  // to ~39 full resume renders sitting in this one scroll
+                  // container, this is what actually keeps arrow-click
+                  // scrolling light instead of the browser having to keep
+                  // every single one painted and composited at once.
+                  contentVisibility: 'auto',
+                  containIntrinsicSize: '300px 490px',
+                }}
               >
                 {/* Template Info Pill */}
                 <div className="flex items-center justify-between px-2 mb-2.5">
