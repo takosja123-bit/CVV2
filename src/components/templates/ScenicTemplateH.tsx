@@ -12,6 +12,6 @@ export const ScenicTemplateH: React.FC<TemplateProps> = ({ data, primaryColor = 
   <ScenicTemplateBase
     data={data}
     primaryColor={primaryColor}
-    photoUrl="https://images.unsplash.com/photo-1500209690208-15084dbf0c57?q=80&w=1200&auto=format&fit=crop"
+    photoUrl="https://images.unsplash.com/photo-1653959864991-c828b72c82a8?q=80&w=1200&auto=format&fit=crop"
   />
 );

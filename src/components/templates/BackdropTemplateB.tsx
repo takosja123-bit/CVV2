@@ -12,6 +12,6 @@ export const BackdropTemplateB: React.FC<TemplateProps> = ({ data, primaryColor 
   <BackdropTemplateBase
     data={data}
     primaryColor={primaryColor}
-    photoUrl="https://images.unsplash.com/photo-1549463601-da058868e20d?q=80&w=1400&auto=format&fit=crop"
+    photoUrl="https://images.unsplash.com/photo-1751054220716-7cf3922e46fa?q=80&w=1400&auto=format&fit=crop"
   />
 );
