@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { CVData, TemplateId, TemplateConfig, PlanTier } from '../../types';
 import { TEMPLATES } from '../../data/initialData';
 import { TemplateDispatcher } from '../templates/TemplateDispatcher';
@@ -262,8 +262,10 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({
     'Pro Plan': templates.filter((t) => t.planTier === 'Pro Plan').length,
     'Premium Plan': templates.filter((t) => t.planTier === 'Premium Plan').length,
   };
-  const visibleTemplates =
-    activeFilter === 'All' ? templates : templates.filter((t) => t.planTier === activeFilter);
+  const visibleTemplates = useMemo(
+    () => (activeFilter === 'All' ? templates : templates.filter((t) => t.planTier === activeFilter)),
+    [templates, activeFilter]
+  );
 
   // Check scroll positions for disabling arrows
   const checkScroll = () => {
