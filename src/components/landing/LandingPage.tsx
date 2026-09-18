@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CVData, TemplateId, PlanTier } from '../../types';
 import { TEMPLATES } from '../../data/initialData';
 import { TemplateCardThumbnail } from './TemplateCardThumbnail';
@@ -39,10 +39,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const currentTemplate =
     TEMPLATES.find((t) => t.id === activeTemplateId) || TEMPLATES[0];
 
-  const filteredTemplates =
-    selectedPlanFilter === 'All'
-      ? TEMPLATES
-      : TEMPLATES.filter((t) => t.planTier === selectedPlanFilter);
+  // Memoized so this keeps the SAME array reference across re-renders that
+  // don't actually change the filter (e.g. selecting a template card, which
+  // re-renders this whole page via activeTemplateId). Without this,
+  // TEMPLATES.filter(...) built a brand-new array object every render
+  // whenever any filter other than 'All' was active (the 'All' branch
+  // happened to return the stable TEMPLATES constant directly, which is
+  // exactly why this bug was invisible under 'All' and only ever showed up
+  // under Free/Basic/Pro/Premium). TemplateCarousel receives this as its
+  // `templates` prop and depends on it by reference for its own
+  // visibleTemplates useMemo -- a churning reference here made it think the
+  // filter itself had changed on every single card selection, which
+  // re-triggered its "reset scroll to the start of the list" effect.
+  const filteredTemplates = useMemo(
+    () =>
+      selectedPlanFilter === 'All'
+        ? TEMPLATES
+        : TEMPLATES.filter((t) => t.planTier === selectedPlanFilter),
+    [selectedPlanFilter]
+  );
 
   const getPlanBadgeColor = (plan: PlanTier) => {
     switch (plan) {
